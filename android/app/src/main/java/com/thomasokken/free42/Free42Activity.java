@@ -84,7 +84,12 @@ import android.support.v4.content.FileProvider;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
+<<<<<<< HEAD
 import android.view.KeyCharacterMap;
+=======
+import android.util.Log;
+import android.view.HapticFeedbackConstants;
+>>>>>>> ae52e290c7711abe4171691e9e54b41a0f7caa9b
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -136,7 +141,6 @@ public class Free42Activity extends Activity {
     private ScrollView printScrollView;
     private boolean printViewShowing;
     private PreferencesDialog preferencesDialog;
-    private AlertDialog mainMenuDialog;
     private AlertDialog programImportExportMenuDialog;
     private AlertDialog fileManagementMenuDialog;
     private Handler mainHandler;
@@ -674,32 +678,25 @@ public class Free42Activity extends Activity {
     }
 
     private void postMainMenu() {
-        if (mainMenuDialog == null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Main Menu");
-            List<String> itemsList = new ArrayList<String>();
-            itemsList.add("Show Print-Out");
-            itemsList.add("Program Import & Export");
-            itemsList.add("File Import & Export");
-            itemsList.add("States");
-            itemsList.add("Preferences");
-            itemsList.add("Select Skin");
-            itemsList.add("Copy");
-            itemsList.add("Paste");
-            itemsList.add("About Free42");
-            itemsList.add("Cancel");
-            builder.setItems(itemsList.toArray(new String[itemsList.size()]),
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            mainMenuItemSelected(which);
-                        }
-                    });
-            mainMenuDialog = builder.create();
-        }
-        mainMenuDialog.show();
+        final String[] itemsArr = {
+            "Show Print-Out",
+            "Program Import & Export",
+            "File Import & Export",
+            "States",
+            "Preferences",
+            "Select Skin",
+            "Copy",
+            "Paste",
+            "About Free42",
+            "Cancel",
+        };
+        new AlertDialog.Builder(this)
+            .setTitle("Main Menu")
+            .setItems(itemsArr, this::mainMenuItemSelected)
+            .show();
     }
 
-    private void mainMenuItemSelected(int which) {
+    private void mainMenuItemSelected(DialogInterface dialog, int which) {
         switch (which) {
             case 0:
                 doFlipCalcPrintout();
@@ -1344,6 +1341,8 @@ public class Free42Activity extends Activity {
         
         if (preferredOrientation != oldOrientation)
             setRequestedOrientation(preferredOrientation);
+
+        preferencesDialog.dismiss();
     }
     
     private void doAbout() {
@@ -1375,6 +1374,9 @@ public class Free42Activity extends Activity {
                 try {
                     version = " " + getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
                 } catch (NameNotFoundException e) {}
+                if (BuildConfig.DEBUG)
+                    version += " debug";
+                version += " (" + BuildConfig.GitRev + ")";
                 label1.setText("Free42" + version);
                 LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
                 lp.addRule(RelativeLayout.ALIGN_TOP, icon.getId());
@@ -1587,12 +1589,64 @@ public class Free42Activity extends Activity {
                         this.possibleMenuEvent = true;
                     return true;
                 }
+<<<<<<< HEAD
                 click();
                 macroObj = skin.find_macro(ckey);
                 if (macroObj instanceof Object[]) {
                     Object[] arr = (Object[]) macroObj;
                     macroObj = arr[0];
                     macroIsText = (Boolean) arr[1];
+=======
+                click(this);
+                Object macroObj = skin.find_macro(ckey);
+                if (timeout3_active && (macroObj != null || ckey != 28 /* SHIFT */)) {
+                    cancelTimeout3();
+                    core_timeout3(false);
+                }
+                Rect inval = skin.set_active_key(skey);
+                if (inval != null)
+                    invalidateScaled(inval);
+                boolean running;
+                BooleanHolder enqueued = new BooleanHolder();
+                IntHolder repeat = new IntHolder();
+                if (macroObj == null) {
+                    // Plain ol' key
+                    running = core_keydown(ckey, enqueued, repeat, true);
+                } else if (macroObj instanceof String) {
+                    // Direct-mapped command
+                    String cmd = (String) macroObj;
+                    running = core_keydown_command(cmd, enqueued, repeat, true);
+                } else {
+                    running = false;
+                    byte[] macro = (byte[]) macroObj;
+                    boolean one_key_macro = macro.length == 1 || (macro.length == 2 && macro[0] == 28);
+                    if (one_key_macro) {
+                        for (int i = 0; i < macro.length; i++) {
+                            running = core_keydown(macro[i] & 255, enqueued, repeat, true);
+                            if (!enqueued.value)
+                                core_keyup();
+                        }
+                    } else {
+                        boolean waitForProgram = !program_running();
+                        skin.set_display_enabled(false);
+                        for (int i = 0; i < macro.length; i++) {
+                            running = core_keydown(macro[i] & 255, enqueued, repeat, true);
+                            if (!enqueued.value)
+                                running = core_keyup();
+                            while (waitForProgram && running)
+                                running = core_keydown(0, null, null, true);
+                        }
+                        skin.set_display_enabled(true);
+                    }
+                }
+                if (running)
+                    startRunner();
+                else {
+                    if (repeat.value != 0)
+                        mainHandler.postDelayed(repeaterCaller, repeat.value == 1 ? 1000 : 500);
+                    else if (!enqueued.value)
+                        mainHandler.postDelayed(timeout1Caller, 250);
+>>>>>>> ae52e290c7711abe4171691e9e54b41a0f7caa9b
                 }
                 shell_keydown();
                 mouse_key = true;
@@ -2572,17 +2626,19 @@ public class Free42Activity extends Activity {
         startRunner();
     }
     
-    private void click() {
+    private void click(View view) {
         if (keyClicksLevel > 0)
             playSound(keyClicksLevel + 10);
-        if (keyVibration > 0) {
+        if (keyVibration == -1) {
+            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+        } else if (keyVibration > 0) {
             int ms = (int) (Math.pow(2, (keyVibration - 1) / 2.0) + 0.5);
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             v.vibrate(ms);
         }
     }
-    
-    
+
+
     public void playSound(int index) {
         soundPool.play(soundIds[index], 1f, 1f, 0, 0, 1f);
     }
@@ -3208,7 +3264,7 @@ public class Free42Activity extends Activity {
     }
     
     public void shell_log(String s) {
-        System.err.print(s);
+        Log.i("FREE42", s);
     }
 
     public static String getNameFromUri(Uri uri) {

@@ -23,12 +23,12 @@
 #include <math.h>
 #endif
 
-#define int2 short
-#define uint2 unsigned short
-#define int4 int
-#define uint4 unsigned int
-#define int8 long long
-#define uint8 unsigned long long
+typedef short           int2;
+typedef unsigned short  uint2;
+typedef int             int4;
+typedef unsigned int    uint4;
+typedef long long       int8;
+typedef unsigned long long uint8;
 
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 /* I have tested big-endian state file compatibility in Fedora 12

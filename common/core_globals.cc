@@ -1687,7 +1687,7 @@ void clear_all_prgms() {
 }
 
 int clear_prgm(const arg_struct *arg) {
-    int prgm_index;
+    int prgm_index = 0;
     if (arg->type == ARGTYPE_LBLINDEX)
         prgm_index = labels[arg->val.num].prgm;
     else if (arg->type == ARGTYPE_STR) {
@@ -2159,7 +2159,7 @@ void delete_command(int4 pc) {
 void store_command(int4 pc, int command, arg_struct *arg, const char *num_str) {
     unsigned char buf[100];
     int bufptr = 0;
-    int xstr_len;
+    int xstr_len = 0;
     int i;
     int4 pos;
     prgm_struct *prgm = prgms + current_prgm;
@@ -4103,7 +4103,8 @@ void hard_reset(int reason) {
     flags.f.stack_lift_disable = 0;
     int df = shell_date_format();
     flags.f.dmy = df == 1;
-    flags.f.f32 = flags.f.f33 = 0;
+    flags.f.fix_float = 0; /* WILD: When in FIX mode, hide trailing zeros like in ALL mode */
+    flags.f.f33 = 0;
     flags.f.agraph_control1 = 0;
     flags.f.agraph_control0 = 0;
     flags.f.digits_bit3 = 0;

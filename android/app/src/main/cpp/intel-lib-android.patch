@@ -15,135 +15,77 @@ Index: IntelRDFPMathLib20U1/LIBRARY/makefile
 ===================================================================
 --- IntelRDFPMathLib20U1.orig/LIBRARY/makefile
 +++ IntelRDFPMathLib20U1/LIBRARY/makefile
-@@ -212,6 +212,14 @@ ifeq ($(DFP_WRAP),1)
- endif
- endif
- 
-+# silent make rules
-+V ?= 0
-+_V_CC_0        = @echo "  CC      " $@;
-+_V_CXX_0       = @echo "  CXX     " $@;
-+_V_LD_0        = @echo "  LD      " $@;
-+_V_AR_0        = @echo "  AR      " $@;
+@@ -109,7 +109,11 @@ _CFLAGS_CONFIG :=
+ _CFLAGS_OS     := $(call HostOsTypeSelect, -DLINUX, -DWINDOWS)
+ _CFLAGS_ARCH   := $(call HostArchTypeSelect,-Dia32,-DITANIUM -Dia64, -Defi2)
+ _CFLAGS_CC     :=
+-_CFLAGS_OPT    := 
++_CFLAGS_OPT    := -fPIC
 +
-+CC_RULE = $(_V_CC_$(V))$(CC)
- 
- # =============================================================================
- # Set up default target
-@@ -348,12 +356,12 @@ $(OBJ_DIR)/bid32_sqrt.$O   :: $(SRC_DIR)
- $(OBJ_DIR)/bid32_div.$O    :: $(SRC_DIR)/bid_div_macros.h
- 
- $(BID_TRANS_OBJS)    :: $(OBJ_DIR)/%.$O : $(SRC_DIR)/%.c $(SRC_DIR)/bid_trans.h
--	$(CC) -c $(FO)$@ $(CFLAGS) $(BID_BLD_FLAGS) $<
-+	$(CC_RULE) -c $(FO)$@ $(CFLAGS) $(BID_BLD_FLAGS) $<
- 	
- 
- $(BID_INTERNAL_OBJS) :: $(OBJ_DIR)/%.$O : $(SRC_DIR)/%.c \
-                         $(SRC_DIR)/bid_internal.h
--	$(CC) -c $(FO)$@ $(CFLAGS) $(BID_BLD_FLAGS) $<
-+	$(CC_RULE) -c $(FO)$@ $(CFLAGS) $(BID_BLD_FLAGS) $<
- 
- $(SRC_DIR)/bid_trans.h : $(SRC_DIR)/bid_internal.h
- 	touch $@
-@@ -373,7 +381,7 @@ lib : $(BID_LIB)
- $(BID_LIB) :: $(LIB_DIR)/.directory_exists
- 
- $(BID_LIB) :: $(ALL_BID_OBJS)
--	$(AR_CMD) $(AR_OUT)$@ $^
-+	$(_V_AR_$(V))$(AR_CMD) $(AR_OUT)$@ $^
- 
- .PHONY : cleanLib realCleanLib
- 
-@@ -429,7 +437,7 @@ $(OBJ_DIR)/dpml_exception.$O :: $(call P
- $(F128_HDR_OBJS) :: $(OBJ_DIR)/dpml_ux_%.$O : $(F128_DIR)/dpml_%_x.h
- 
- $(F128_OBJS) :: $(OBJ_DIR)/%.$O : $(F128_DIR)/%.c $(F128_DIR)/dpml_ux.h
--	$(CC) -c $(FO)$@ $(F128_CFLAGS) $<
-+	$(CC_RULE) -c $(FO)$@ $(F128_CFLAGS) $<
- 
- 	
- # =============================================================================
-@@ -450,54 +458,54 @@ $(OBJ_DIR)/dpml_asinh_t.$O  :: $(F128_DI
- $(OBJ_DIR)/dpml_erf_t.$O \
- $(OBJ_DIR)/dpml_asinh_t.$O  :: $(OBJ_DIR)/dpml_%_t.$O : $(F128_DIR)/dpml_%.c \
-                                $(F128_DIR)/dpml_%_t.h
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $(D_F_NAME) \
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $(D_F_NAME) \
-              -DBUILD_FILE_NAME=$(BUILD_FILE_NAME) $<
-  
- $(OBJ_DIR)/dpml_rt_lgamma_t.$O :: $(F128_DIR)/dpml_lgamma.c \
-                                   $(F128_DIR)/dpml_lgamma_t.h
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) -DT_FLOAT -DBUILD_FILE_NAME=dpml_lgamma_t.h $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) -DT_FLOAT -DBUILD_FILE_NAME=dpml_lgamma_t.h $<
-  
- $(OBJ_DIR)/dpml_lgamma_t.$O :: $(F128_DIR)/dpml_lgamma.c \
-                                   $(F128_DIR)/dpml_lgamma_t.h
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_TYPE) -DDO_LGAMMA -DHACK_GAMMA_INLINE=0 \
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_TYPE) -DDO_LGAMMA -DHACK_GAMMA_INLINE=0 \
-              -DBUILD_FILE_NAME=dpml_lgamma_t.h $<
-  
- $(OBJ_DIR)/dpml_acosh_t.$O :: $(F128_DIR)/dpml_asinh.c $(F128_DIR)/dpml_acosh_t.h \
-                               $(F128_DIR)/sqrt_tab_t.c
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $<
-  
- $(OBJ_DIR)/dpml_erfc_t.$O  :: $(F128_DIR)/dpml_erf.c   $(F128_DIR)/dpml_erf_t.h
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) \
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) \
-         -DBUILD_FILE_NAME=dpml_erf_t.h $<
-  
- $(OBJ_DIR)/dpml_log1p_t.$O :: $(F128_DIR)/dpml_log.c $(F128_DIR)/dpml_log_t.h
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $<
-  
- $(OBJ_DIR)/dpml_log2_t.$O :: $(F128_DIR)/dpml_log.c $(F128_DIR)/dpml_log_t.h
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $<
-  
- $(OBJ_DIR)/dpml_cbrt_t.$O :: $(F128_DIR)/dpml_cbrt.c $(F128_DIR)/dpml_cbrt_t_table.c
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) \
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) \
-         -DBUILD_FILE_NAME=dpml_cbrt_t_table.c $<
-  
- $(OBJ_DIR)/dpml_exp10_t.$O \
- $(OBJ_DIR)/dpml_exp2_t.$O  :: $(F128_DIR)/dpml_exp.c $(F128_DIR)/dpml_pow_t_table.c
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) -DUSE_CONTROL87 $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) -DUSE_CONTROL87 $<
- 
- $(OBJ_DIR)/dpml_expm1_t.$O :: $(F128_DIR)/dpml_expm1.c $(F128_DIR)/dpml_pow_t_table.c
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) -DUSE_CONTROL87 $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) -DUSE_CONTROL87 $<
- 
- $(OBJ_DIR)/dpml_tgamma_t.$O :: $(F128_DIR)/dpml_tgamma.c $(F128_DIR)/dpml_special_exp.h
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_NAME) $(D_F_TYPE) $<
-  
- $(OBJ_DIR)/dpml_special_exp_t.$O :: $(F128_DIR)/dpml_exp.c \
-                                   $(F128_DIR)/dpml_pow_t_table.c
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) -DSPECIAL_EXP -DT_FLOAT $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) -DSPECIAL_EXP -DT_FLOAT $<
-  
-  
- $(OBJ_DIR)/dpml_pow_t_table.$O \
- $(OBJ_DIR)/dpml_cbrt_t_table.$O :: $(OBJ_DIR)/%.$O : $(F128_DIR)/%.c
--	$(CC) -c $(FO)$@ $(F53_CFLAGS) $(D_F_TYPE) $<
-+	$(CC_RULE) -c $(FO)$@ $(F53_CFLAGS) $(D_F_TYPE) $<
- 
-                                                            
- cleanBinary :
++ifeq ($(ANDROIDARCH),armv7)
++    _CFLAGS_OPT += -mfpu=vfp
++endif
+     
+ ifeq ($(BID_BIG_ENDIAN),true)
+     _CFLAGS_CONFIG += -DBID_BIG_ENDIAN=1
 Index: IntelRDFPMathLib20U1/LIBRARY/makefile.iml_head
 ===================================================================
 --- IntelRDFPMathLib20U1.orig/LIBRARY/makefile.iml_head
 +++ IntelRDFPMathLib20U1/LIBRARY/makefile.iml_head
-@@ -490,7 +490,7 @@ MACH__space:=$(__empty) $(__empty)
+@@ -320,29 +320,30 @@ HOST_OS_TYPE_INDEX := $(call GetIndex,$(
+ # Determine host architecture.
+ # ==============================================================================
  
- FLS        := $(call CselOs,FLS,       $(_OS_CHOICE),       :,           ;)
- RM         := $(call CselOs, RM,       $(_OS_CHOICE),   rm -f, del        )
--AR_CMD     := $(call CselOsName,AR_CMD,$(_OS_CHOICE),   ar rv, ar rv, libtool, lib -nologo)
-+AR_CMD     := $(call CselOsName,AR_CMD,$(_OS_CHOICE),   ar r, ar r, libtool, lib -nologo)
- AR_OUT     := $(call CselOsName,AR_OUT,$(_OS_CHOICE),        ,      ,      -o, /out:)$($(IML_TARGET_OS)__space)
- LD_CMD     := $(call CselOsName,LD_CMD,$(_OS_CHOICE),icc,icc,libtool,link /nologo)
- LD_OUT     := $(call CselOs, LD_OUT,   $(_OS_CHOICE),      -o,       /out:)$($(IML_TARGET_OS)__space)
+-ifeq ($(IML_HOST_OS_TYPE),LINUX)
+-    ifneq ($(IML_HOST_OS),MACH)
+-        _HOST_ARCH := $(shell uname -m)
+-    else
+-        # ======================================================================
+-        # MACH may report "i386" for uname -m command in both 32 and 64 cases
+-        # Therefore we use the following command sequence found in ICS scripts
+-        # ======================================================================
+-        __RUN_SYSCTL := $(word 2,\
+-                            $(shell sysctl -a hw | grep hw.optional.x86_64:\ 1))
+-        ifeq ($(__RUN_SYSCTL),1)
+-            _HOST_ARCH := x86_64
+-        else
+-            _HOST_ARCH := x86
+-        endif
+-    endif
+-else
+-    ifeq ($(IML_HOST_OS_TYPE),WINNT)
+-        _HOST_ARCH := $(word 1,$(PROCESSOR_IDENTIFIER))
+-    else
+-        $(error Don't know how to determine architecture for $(IML_HOST_OS))
+-    endif
+-endif
++#ifeq ($(IML_HOST_OS_TYPE),LINUX)
++#    ifneq ($(IML_HOST_OS),MACH)
++#        _HOST_ARCH := $(shell uname -m)
++#    else
++#        # ======================================================================
++#        # MACH may report "i386" for uname -m command in both 32 and 64 cases
++#        # Therefore we use the following command sequence found in ICS scripts
++#        # ======================================================================
++#        __RUN_SYSCTL := $(word 2,\
++#                            $(shell sysctl -a hw | grep hw.optional.x86_64:\ 1))
++#        ifeq ($(__RUN_SYSCTL),1)
++#            _HOST_ARCH := x86_64
++#        else
++#            _HOST_ARCH := x86
++#        endif
++#    endif
++#else
++#    ifeq ($(IML_HOST_OS_TYPE),WINNT)
++#        _HOST_ARCH := $(word 1,$(PROCESSOR_IDENTIFIER))
++#    else
++#        $(error Don't know how to determine architecture for $(IML_HOST_OS))
++#    endif
++#endif
++_HOST_ARCH := x86_64
+ 
+ ARCH_ALIAS := x86  ia64 EM64T x86_64 i686 amd64 Intel64 sun4u
+ ARCH_LIST  := IA32 IA64 EFI2  EFI2   IA32 EFI2  EFI2    EFI2
 Index: IntelRDFPMathLib20U1/LIBRARY/src/bid128_hypot.c
 ===================================================================
 --- IntelRDFPMathLib20U1.orig/LIBRARY/src/bid128_hypot.c
@@ -157,6 +99,30 @@ Index: IntelRDFPMathLib20U1/LIBRARY/src/bid128_hypot.c
  	{
  	 res.w[BID_HIGH_128W] = x.w[BID_HIGH_128W];
  	 res.w[BID_LOW_128W] = x.w[BID_LOW_128W];
+Index: IntelRDFPMathLib20U1/LIBRARY/src/bid_functions.h
+===================================================================
+--- IntelRDFPMathLib20U1.orig/LIBRARY/src/bid_functions.h
++++ IntelRDFPMathLib20U1/LIBRARY/src/bid_functions.h
+@@ -42,6 +42,7 @@
+ #include <ctype.h>
+ 
+ // Fix system header issue on Sun solaris and define required type by ourselves
++#define _WCHAR_T_DEFINED
+ #if !defined(_WCHAR_T) && !defined(_WCHAR_T_DEFINED) && !defined(__QNX__)
+ typedef int   wchar_t;
+ #endif
+@@ -149,8 +150,10 @@ typedef BID_UINT128 _Quad;
+ 
+ ///////////////////////////////////////////////////////
+ //  This section may move to fenv_support.h
++#include <fenv.h>
++#define _FENV_INCLUDED
+ 
+-#if !defined(__FENV_H_INCLUDED) && !defined (_FENV_H) && !defined(_FENV_INCLUDED)          /* Otherwise we already defined fexcept_t type */
++#if !defined(__FENV_H_INCLUDED) && !defined (_FENV_H) && !defined (_FENV_H_) && !defined(_FENV_INCLUDED) && !defined(FE_DFL_ENV) /* Otherwise we already defined fexcept_t type */
+ #if defined(__ECL) || defined(__ECC)            /* Intel(R) Itanium(R) architecture */
+ /* Default 64-bit Floating Point Status Register   */
+ #if defined(__linux__)
 Index: IntelRDFPMathLib20U1/TESTS/readtest.c
 ===================================================================
 --- IntelRDFPMathLib20U1.orig/TESTS/readtest.c
@@ -1151,6 +1117,19 @@ Index: IntelRDFPMathLib20U1/TESTS/readtest.c
  }
  
 +#endif /* FREE42_FPTEST */
+Index: IntelRDFPMathLib20U1/TESTS/test_bid_functions.h
+===================================================================
+--- IntelRDFPMathLib20U1.orig/TESTS/test_bid_functions.h
++++ IntelRDFPMathLib20U1/TESTS/test_bid_functions.h
+@@ -156,7 +156,7 @@ typedef BID_UINT128 _Quad;
+ ///////////////////////////////////////////////////////
+ //  This section may move to fenv_support.h
+ 
+-#if !defined(__FENV_H_INCLUDED) && !defined (_FENV_H) && !defined(_FENV_INCLUDED)          /* Otherwise we already defined fexcept_t type */
++#if !defined(__FENV_H_INCLUDED) && !defined (_FENV_H_) && !defined(_FENV_INCLUDED) && !defined(FE_DFL_ENV) /* Otherwise we already defined fexcept_t type */
+ #if defined(__ECL) || defined(__ECC)            /* Intel(R) Itanium(R) architecture */
+ /* Default 64-bit Floating Point Status Register   */
+ #if defined(__linux__)
 Index: IntelRDFPMathLib20U1/LIBRARY/src/bid_conf.h
 ===================================================================
 --- IntelRDFPMathLib20U1.orig/LIBRARY/src/bid_conf.h

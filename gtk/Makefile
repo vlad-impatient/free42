@@ -16,23 +16,22 @@
 ###############################################################################
 
 PKG_CONFIG ?= pkg-config
-CXX_FOR_BUILD ?= $(CXX)
 
-CFLAGS += -MMD \
+CPPFLAGS += -MMD
+CFLAGS ?= -O2
+
+CFLAGS += \
+	$(CPPFLAGS) \
 	 -Wall \
 	 -Wno-parentheses \
 	 -Wno-write-strings \
 	 -Wno-sign-compare \
 	 -Wno-narrowing \
-	 -Wno-constant-conversion \
-	 -Wno-sometimes-uninitialized \
 	 -Wno-format-truncation \
-	 -Wno-class-memaccess \
-	 -Wno-unknown-warning-option \
-	 -g \
+	 -pipe -g \
 	 $(shell $(PKG_CONFIG) --cflags gtk+-3.0) \
 	 -DGDK_DISABLE_DEPRECATION_WARNINGS -DGTK_DISABLE_SINGLE_INCLUDES -DGSEAL_ENABLE \
-	 -DVERSION="\"$(shell cat VERSION)\"" \
+	 -DVERSION="\"$(shell cat VERSION) ($(shell ../gitversion.sh))\"" \
 	 -DVERSION_PLATFORM="\"$(shell uname -s)\"" \
 	 -DDECIMAL_CALL_BY_REFERENCE=1 \
 	 -DDECIMAL_GLOBAL_ROUNDING=1 \
@@ -40,12 +39,22 @@ CFLAGS += -MMD \
 	 -DDECIMAL_GLOBAL_EXCEPTION_FLAGS=1 \
 	 -DDECIMAL_GLOBAL_EXCEPTION_FLAGS_ACCESS_FUNCTIONS=1
 
+ifeq ($(WERROR),1)
+CFLAGS += -Werror
+endif
+
 CXXFLAGS = $(CFLAGS) \
 	 -fno-exceptions \
 	 -fno-rtti \
 	 -D_WCHAR_T_DEFINED
 
-LIBS = gcc111libbid.a $(shell $(PKG_CONFIG) --libs gtk+-3.0)
+HOSTCC       ?= $(CC)
+HOSTCXX      ?= $(CXX)
+HOSTCFLAGS   ?= $(CFLAGS)
+HOSTCXXFLAGS ?= $(CXXFLAGS)
+HOSTLDFLAGS  ?= $(LDFLAGS)
+
+LIBS = -L$(INTEL_DIR)/LIBRARY -lbid $(shell $(PKG_CONFIG) --libs gtk+-3.0)
 
 ifdef AUDIO_ALSA
 LIBS += -lpthread -ldl
@@ -79,7 +88,12 @@ CORE_OBJS = shell_spool.o core_main.o core_commands1.o core_commands2.o \
 OBJS = shell_main.o shell_skin.o skins.o keymap.o shell_loadimage.o \
 	$(CORE_OBJS)
 
-ifdef BCD_MATH
+BCD_MATH ?= 1
+
+INTEL_DIR = IntelRDFPMathLib20U1
+INTEL_LIB = $(INTEL_DIR)/LIBRARY/libbid.a
+
+ifeq ($(BCD_MATH),1)
 CXXFLAGS += -DBCD_MATH
 EXE = free42dec
 else
@@ -103,61 +117,69 @@ SRCS += audio_alsa.cc
 OBJS += audio_alsa.o
 endif
 
-$(EXE): $(OBJS) gcc111libbid.a
-	$(CXX) -o $(EXE) $(LDFLAGS) $(OBJS) $(LIBS)
+# silent make rules
+V ?= 0
+_V_CC_0        = @echo "  CC      " $@;
+_V_CXX_0       = @echo "  CXX     " $@;
+_V_LD_0        = @echo "  LD      " $@;
+_V_HOSTCC_0    = @echo "  HOSTCC  " $@;
+_V_HOSTCXX_0   = @echo "  HOSTCXX " $@;
+_V_HOSTLD_0    = @echo "  HOSTLD  " $@;
+_V_GEN_0       = @echo "  GEN     " $@;
+_V_CLEAN_0     = @echo "  CLEAN";
+_V_DISTCLEAN_0 = @echo "  DISTCLEAN";
 
-txt2raw: symlinks txt2raw.o $(CORE_OBJS) gcc111libbid.a
-	$(CXX) -o txt2raw $(LDFLAGS) txt2raw.o $(CORE_OBJS) $(LIBS)
+$(EXE): $(OBJS)
+	$(_V_LD_$(V))$(CXX) -o $(EXE) $(CXXFLAGS) $(LDFLAGS) $(OBJS) $(LIBS)
 
-raw2txt: symlinks raw2txt.o $(CORE_OBJS) gcc111libbid.a
-	$(CXX) -o raw2txt $(LDFLAGS) raw2txt.o $(CORE_OBJS) $(LIBS)
-
-$(SRCS) skin2cc.cc keymap2cc.cc skin2cc.conf: symlinks
+$(SRCS) skin2cc.cc keymap2cc.cc skin2cc.conf: .symlinks_done $(INTEL_LIB)
 
 .cc.o:
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+	$(_V_CXX_$(V))$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+txt2raw: txt2raw.o $(CORE_OBJS)
+	$(_V_LD_$(V))$(CXX) -o txt2raw $(CXXFLAGS) $(LDFLAGS) txt2raw.o $(CORE_OBJS) $(LIBS)
+
+raw2txt: raw2txt.o $(CORE_OBJS)
+	$(_V_LD_$(V))$(CXX) -o raw2txt $(CXXFLAGS) $(LDFLAGS) raw2txt.o $(CORE_OBJS) $(LIBS)
 
 readtest.o: readtest.c
-	$(CC) $(CFLAGS) -I IntelRDFPMathLib20U1/TESTS -D__intptr_t_defined -DLINUX -c -o $@ $<
+	$(_V_CC_$(V))$(CC) $(CFLAGS) -I $(INTEL_DIR)/TESTS -D__intptr_t_defined -DLINUX -c -o $@ $<
 
 skin2cc: skin2cc.cc
-	$(CXX_FOR_BUILD) -o skin2cc skin2cc.cc
+	$(_V_HOSTCXX_$(V))$(HOSTCXX) $(HOSTCXXFLAGS) $(HOSTLDFLAGS) -o skin2cc skin2cc.cc
 
 skins.cc: skin2cc skin2cc.conf
-	./skin2cc
+	$(_V_GEN_$(V))./skin2cc
 
 keymap2cc: keymap2cc.cc
-	$(CXX_FOR_BUILD) -o keymap2cc keymap2cc.cc
+	$(_V_HOSTCXX_$(V))$(CXX) $(HOSTCXXFLAGS) $(HOSTLDFLAGS) -o keymap2cc keymap2cc.cc
 
 keymap.cc: keymap2cc keymap.txt
-	./keymap2cc
+	$(_V_GEN_$(V))./keymap2cc
 
-gcc111libbid.a:
-	sh ./build-intel-lib.sh
-	ln -s IntelRDFPMathLib20U1/TESTS/readtest.c
+symlinks: .symlinks_done
+.symlinks_done:
+	find ../common -type f -exec ln -s {} . \;
+	@touch $@
 
-symlinks:
-	for fn in `cd ../common; /bin/ls`; do ln -s ../common/$$fn; done
-	touch symlinks
+$(INTEL_LIB):
+	+sh ./build-intel-lib.sh
 
-clean: FORCE
-	rm -f `find . -type l ! -name readtest.c` \
-		skin2cc skin2cc.exe skins.cc \
-		keymap2cc keymap2cc.exe keymap.cc \
-		*.o *.d *.i *.ii *.s symlinks core.* \
-		raw2txt txt2raw
+CLEAN_FILES = skin2cc skins.cc keymap2cc keymap.cc readtest_lines.cc
+CLEAN_FILES += raw2txt txt2raw
+CLEAN_FILES += .symlinks_done *.o *.d 
+CLEANER_FILES = free42bin free42dec
 
-cleaner: FORCE
-	rm -f `find . -type l` \
-		free42bin free42bin.exe free42dec free42dec.exe \
-		skin2cc skin2cc.exe skins.cc \
-		keymap2cc keymap2cc.exe keymap.cc \
-		readtest_lines.cc \
-		gcc111libbid.a \
-		*.o *.d *.i *.ii *.s symlinks core.* \
-		raw2txt txt2raw
-	rm -rf IntelRDFPMathLib20U1
+clean:
+	find . -type l -delete
+	rm -f $(CLEAN_FILES)
 
-FORCE:
+cleaner: clean
+	rm -f $(CLEANER_FILES)
+	rm -rf $(INTEL_DIR)
+
+distclean: cleaner
+.PHONY: clean cleaner distclean
 
 -include $(OBJS:.o=.d)

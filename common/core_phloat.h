@@ -38,7 +38,7 @@
 #ifndef BCD_MATH
 
 
-#define phloat double
+typedef double phloat;
 
 #define p_isinf(x) (isinf(x) ? (x) > 0 ? 1 : -1 : 0)
 #define p_isnan isnan
@@ -60,50 +60,150 @@ double decimal2double(void *data, bool pin_magnitude = false);
 
 #else // BCD_MATH
 
-
-#define phloat Phloat
-
 class Phloat {
     public:
         BID_UINT128 val;
 
         Phloat() {}
+        Phloat(const Phloat &p) = default;
         Phloat(const BID_UINT128 &b) : val(b) {}
-        Phloat(const char *str);
         Phloat(int numer, int denom);
         Phloat(int8 numer, int8 denom);
-        Phloat(int i);
-        Phloat(int8 i);
-        Phloat(uint8 i);
-        Phloat(double d);
-        Phloat(const Phloat &p);
-        Phloat operator=(const BID_UINT128 &b) { val = b; return *this; }
-        Phloat operator=(int i);
-        Phloat operator=(int8 i);
-        Phloat operator=(uint8 i);
-        Phloat operator=(double d);
-        Phloat operator=(Phloat p);
-        void assign17digits(double d);
-        bool operator==(Phloat p) const;
-        bool operator!=(Phloat p) const;
-        bool operator<(Phloat p) const;
-        bool operator<=(Phloat p) const;
-        bool operator>(Phloat p) const;
-        bool operator>=(Phloat p) const;
-        Phloat operator-() const;
-        Phloat operator*(Phloat p) const;
-        Phloat operator/(Phloat p) const;
-        Phloat operator+(Phloat p) const;
-        Phloat operator-(Phloat p) const;
-        Phloat operator*=(Phloat p);
-        Phloat operator/=(Phloat p);
-        Phloat operator+=(Phloat p);
-        Phloat operator-=(Phloat p);
+
+        Phloat(const char *str) {
+            bid128_from_string(&val, (char *) str);
+        }
+        Phloat(int i) {
+            bid128_from_int32(&val, &i);
+        }
+        Phloat(int8 i) {
+            bid128_from_int64(&val, &i);
+        }
+        Phloat(uint8 i) {
+            bid128_from_uint64(&val, &i);
+        }
+        Phloat(double d) {
+            BID_UINT64 tmp;
+            binary64_to_bid64(&tmp, &d);
+            bid64_to_bid128(&val, &tmp);
+        }
+
+        Phloat& operator=(const Phloat& p) = default;
+        Phloat& operator=(const BID_UINT128 &b) {
+            val = b;
+            return *this;
+        }
+        Phloat& operator=(int i) {
+            bid128_from_int32(&val, &i);
+            return *this;
+        }
+        Phloat& operator=(int8 i) {
+            BID_SINT64 i64 = i;
+            bid128_from_int64(&val, &i64);
+            return *this;
+        }
+        Phloat& operator=(uint8 i) {
+            BID_UINT64 i64 = i;
+            bid128_from_uint64(&val, &i64);
+            return *this;
+        }
+        Phloat& operator=(double d) {
+            BID_UINT64 tmp;
+            binary64_to_bid64(&tmp, &d);
+            bid64_to_bid128(&val, &tmp);
+            return *this;
+        }
+
+        bool operator==(Phloat p) const {
+            int r;
+            bid128_quiet_equal(&r, (BID_UINT128 *) &val, &p.val);
+            return r != 0;
+        }
+        bool operator!=(Phloat p) const {
+            int r;
+            bid128_quiet_not_equal(&r, (BID_UINT128 *) &val, &p.val);
+            return r != 0;
+        }
+        bool operator<(Phloat p) const {
+            int r;
+            bid128_quiet_less(&r, (BID_UINT128 *) &val, &p.val);
+            return r != 0;
+        }
+        bool operator<=(Phloat p) const {
+            int r;
+            bid128_quiet_less_equal(&r, (BID_UINT128 *) &val, &p.val);
+            return r != 0;
+        }
+        bool operator>(Phloat p) const {
+            int r;
+            bid128_quiet_greater(&r, (BID_UINT128 *) &val, &p.val);
+            return r != 0;
+        }
+        bool operator>=(Phloat p) const {
+            int r;
+            bid128_quiet_greater_equal(&r, (BID_UINT128 *) &val, &p.val);
+            return r != 0;
+        }
+
+        Phloat operator-() const {
+            BID_UINT128 res;
+            bid128_negate(&res, (BID_UINT128 *) &val);
+            return Phloat(res);
+        }
+        Phloat operator*(Phloat p) const {
+            BID_UINT128 res;
+            bid128_mul(&res, (BID_UINT128 *) &val, &p.val);
+            return Phloat(res);
+        }
+        Phloat operator/(Phloat p) const {
+            BID_UINT128 res;
+            bid128_div(&res, (BID_UINT128 *) &val, &p.val);
+            return Phloat(res);
+        }
+        Phloat operator+(Phloat p) const {
+            BID_UINT128 res;
+            bid128_add(&res, (BID_UINT128 *) &val, &p.val);
+            return Phloat(res);
+        }
+        Phloat operator-(Phloat p) const {
+            BID_UINT128 res;
+            bid128_sub(&res, (BID_UINT128 *) &val, &p.val);
+            return Phloat(res);
+        }
+
+        Phloat operator*=(Phloat p) {
+            BID_UINT128 res;
+            bid128_mul(&res, &val, &p.val);
+            val = res;
+            return *this;
+        }
+        Phloat operator/=(Phloat p) {
+            BID_UINT128 res;
+            bid128_div(&res, &val, &p.val);
+            val = res;
+            return *this;
+        }
+        Phloat operator+=(Phloat p) {
+            BID_UINT128 res;
+            bid128_add(&res, &val, &p.val);
+            val = res;
+            return *this;
+        }
+        Phloat operator-=(Phloat p) {
+            BID_UINT128 res;
+            bid128_sub(&res, &val, &p.val);
+            val = res;
+            return *this;
+        }
+
         Phloat operator++(); // prefix
         Phloat operator++(int); // postfix
         Phloat operator--(); // prefix
         Phloat operator--(int); // postfix
+        void assign17digits(double d);
 };
+
+typedef Phloat phloat;
 
 // I can't simply overload isinf() and isnan(), because the Linux math.h
 // defines them as macros.

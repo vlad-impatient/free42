@@ -29,7 +29,7 @@
 
 
 int resolve_ind_arg(arg_struct *arg, char *buf, int *buflen) {
-    vartype *v;
+    vartype *v = NULL;
     switch (arg->type) {
         case ARGTYPE_IND_NUM: {
             vartype *regs = recall_var("REGS", 4);
@@ -74,7 +74,7 @@ int resolve_ind_arg(arg_struct *arg, char *buf, int *buflen) {
             }
         }
         case ARGTYPE_IND_STK: {
-            int idx;
+            int idx = 0;
             switch (arg->val.stk) {
                 case 'X': idx = 0; break;
                 case 'Y': idx = 1; break;
@@ -93,9 +93,9 @@ int resolve_ind_arg(arg_struct *arg, char *buf, int *buflen) {
         }
         case ARGTYPE_IND_STR: {
             v = recall_var(arg->val.text, arg->length);
+            finish_resolve:
             if (v == NULL)
                 return ERR_NONEXISTENT;
-            finish_resolve:
             if (v->type == TYPE_REAL) {
                 phloat x = ((vartype_real *) v)->x;
                 if (x < 0)
@@ -241,7 +241,7 @@ int unary_two_results(vartype *x, vartype *y) {
 }
 
 int binary_result(vartype *x) {
-    vartype *t;
+    vartype *t = NULL;
     if (!flags.f.big_stack) {
         t = dup_vartype(stack[REG_T]);
         if (t == NULL) {
@@ -1792,7 +1792,7 @@ const char *phloat2program(phloat d) {
     int alllen;
     int scilen;
     char dot = flags.f.decimal_point ? '.' : ',';
-    int decimal, zeroes, last_nonzero, exponent;
+    int decimal, zeroes = 0, last_nonzero = 0, exponent;
     int i;
     alllen = phloat2string(d, allbuf, 49, 0, 0, 3, 0, MAX_MANT_DIGITS);
     scilen = phloat2string(d, scibuf, 49, 0, MAX_MANT_DIGITS - 1, 1, 0, MAX_MANT_DIGITS);

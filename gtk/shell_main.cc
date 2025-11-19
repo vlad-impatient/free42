@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
 
     GtkApplication *app;
     int status;
-    app = gtk_application_new("com.thomasokken.free42", G_APPLICATION_FLAGS_NONE);
+    app = gtk_application_new("com.thomasokken.free42",  G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
     status = g_application_run(G_APPLICATION(app), 0, NULL);
     g_object_unref(app);
@@ -541,10 +541,10 @@ static void activate(GtkApplication *theApp, gpointer userData) {
     /***** Open the state file and read the shell settings *****/
     /***********************************************************/
 
-    int4 version;
+    int4 version = 0;
     int init_mode;
     char core_state_file_name[FILENAMELEN];
-    int core_state_file_offset;
+    int core_state_file_offset = 0;
 
     statefile = fopen(statefilename, "r");
     if (statefile != NULL) {
@@ -1574,7 +1574,7 @@ static void states_menu_rename() {
     snprintf(newpath, FILENAMELEN, "%s/%s.f42", free42dirname, newname);
     rename(oldpath, newpath);
     if (strcmp(state_names[selectedStateIndex], state.coreName) == 0)
-        strncpy(state.coreName, newname, FILENAMELEN);
+        snprintf(state.coreName, FILENAMELEN, "%s", newname);
     gtk_dialog_response(GTK_DIALOG(dlg), 4);
 }
 
@@ -2659,7 +2659,7 @@ static void shell_keydown() {
     GdkWindow *win = gtk_widget_get_window(calc_widget);
 
     int repeat;
-    bool keep_running;
+    bool keep_running = false;
     if (skey == -1)
         skey = skin_find_skey(ckey);
     skin_invalidate_key(win, skey);
@@ -2701,8 +2701,9 @@ static void shell_keydown() {
                 repeat = 0;
             }
         }
-    } else
+    } else {
         keep_running = core_keydown(ckey, &enqueued, &repeat);
+    }
 
     if (quit_flag)
         quit();

@@ -1,9 +1,44 @@
 #!/bin/sh
 
+<<<<<<< HEAD
 NDK_VERSION=`grep ndkVersion ../../../build.gradle | sed 's/^[^"]*"\([^"]*\)".*$/\1/'`
 NDK="$HOME/Library/Android/sdk/ndk/$NDK_VERSION"
 export PATH="`/bin/pwd`/bin:$NDK/prebuilt/darwin-x86_64/bin:$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin:$PATH"
+=======
+set -eo pipefail
+
+# figure out NDK version and path. build.gradle requests a specific version and we need to compile with
+# that same version here outside of gradle. Mixing NDK versions in the same build could be bad.
+NDK_VERSION="$(sed -nr 's/^[[:space:]]*ndkVersion[[:space:]]+"(.*)"[[:space:]]*$/\1/p' ../../../build.gradle)"
+if [ -n "$NDK_VERSION" ]; then
+    NDK="$ANDROID_HOME/ndk/$NDK_VERSION"
+else
+    # if no ndkVersion is set in build.gradle, then hope that ANDROID_NDK_ROOT is set to something sane
+    NDK="${ANDROID_NDK_ROOT:-/opt/android-ndk}"
+fi
+
+# make sure we actually found an NDK
+if [ -d "$NDK" ]; then
+    echo "Found NDK path '$NDK' for version '$NDK_VERSION'"
+else
+    echo "ERROR: NDK version '$NDK_VERSION' not found in path '$NDK'"
+    exit 1
+fi
+
+set -x
+
+export PATH="$PWD/bin:$NDK/prebuilt/linux-x86_64/bin:$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH"
+>>>>>>> ae52e290c7711abe4171691e9e54b41a0f7caa9b
 BUILT=0
+
+make_wrapper() {
+    cat >$2 <<EOF
+#!/bin/sh
+set -x
+$1 "\$@"
+EOF
+    chmod +x $2
+}
 
 build_arch () {
     ARCH=$1
@@ -14,10 +49,14 @@ build_arch () {
         return
     fi
     rm -rf bin IntelRDFPMathLib20U1
-    mkdir bin
-    echo "$ARCH_CC"' "$@"' > bin/gcc
-    echo "$ARCH_AR"' "$@"' > bin/ar
-    chmod +x bin/*
+    mkdir -p bin
+    # Intel library doesn't like cross-compiling, it's makefiles are a clusterfuck
+    # of functions and lists and abstractions, and so CC *must* be exactly "gcc"
+    # or one of the other supported compilers. Thus, we need wrappers that call
+    # the correct cross compiler.
+    make_wrapper "$ARCH_CC" bin/gcc
+    make_wrapper "$ARCH_AR" bin/ar
+
     if [ -f ../../../../../inteldecimal/IntelRDFPMathLib20U1.tar.gz ]
     then
         tar xfz ../../../../../inteldecimal/IntelRDFPMathLib20U1.tar.gz
@@ -26,18 +65,18 @@ build_arch () {
     fi
 
     cd IntelRDFPMathLib20U1
-    patch -p0 <../intel-lib-android-$ARCH.patch
+    patch -p1 <../intel-lib-android.patch
     cd LIBRARY
-    make CC=gcc CALL_BY_REF=1 GLOBAL_RND=1 GLOBAL_FLAGS=1 UNCHANGED_BINARY_FLAGS=0 _HOST_OS=Linux
+    make ANDROIDARCH=$ARCH CC=gcc CALL_BY_REF=1 GLOBAL_RND=1 GLOBAL_FLAGS=1 UNCHANGED_BINARY_FLAGS=0 _HOST_OS=Linux lib
     mv libbid.a ../../$ARCH_LIB
     cd ../..
     BUILT=1
 }
 
-build_arch armv7 armv7a-linux-androideabi28-clang arm-linux-androideabi-ar
-build_arch arm64 aarch64-linux-android28-clang aarch64-linux-android-ar
-build_arch x86 i686-linux-android28-clang i686-linux-android-ar
-build_arch x86_64 x86_64-linux-android28-clang x86_64-linux-android-ar
+#build_arch armv7 armv7a-linux-androideabi28-clang arm-linux-androideabi-ar
+build_arch arm64 aarch64-linux-android34-clang llvm-ar
+#build_arch x86 i686-linux-android28-clang i686-linux-android-ar
+build_arch x86_64 x86_64-linux-android34-clang llvm-ar
 
 if [ $BUILT -ne 0 ]; then
     cd IntelRDFPMathLib20U1/TESTS

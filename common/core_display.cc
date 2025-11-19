@@ -1106,7 +1106,7 @@ void tb_write_null(textbuf *tb) {
 void tb_print_current_program(textbuf *tb) {
     int4 pc = 0;
     int line = 0;
-    int cmd;
+    int cmd = 0;
     arg_struct arg;
     bool end = false;
     char buf[100];
@@ -1726,8 +1726,8 @@ static void draw_catalog() {
         shell_annunciators(mode_updown, -1, -1, -1, -1, -1);
     } else if (catsect == CATSECT_FCN
             || catsect >= CATSECT_EXT_TIME && catsect <= CATSECT_EXT_X_CMP) {
-        int *subcat;
-        int subcat_rows;
+        int *subcat = NULL;
+        int subcat_rows = 0;
         switch (catsect) {
             case CATSECT_FCN: subcat = fcn_cat; subcat_rows = 43; break;
             case CATSECT_EXT_TIME: subcat = ext_time_cat; subcat_rows = 3; break;
@@ -1740,6 +1740,8 @@ static void draw_catalog() {
             case CATSECT_EXT_0_CMP: subcat = ext_0_cmp_cat; subcat_rows = 1; break;
             case CATSECT_EXT_X_CMP: subcat = ext_x_cmp_cat; subcat_rows = 1; break;
         }
+        if (subcat == NULL)
+            return;
 
         int desired_row = catalogmenu_row[catindex];
         if (desired_row >= subcat_rows)
@@ -2548,7 +2550,7 @@ void print_program_line(int prgm_index, int4 pc) {
 int command2buf(char *buf, int len, int cmd, const arg_struct *arg) {
     int bufptr = 0;
 
-    int4 xrom_arg;
+    int4 xrom_arg = 0;
     if ((cmd_array[cmd].code1 & 0xf8) == 0xa0 && (cmd_array[cmd].flags & FLAG_HIDDEN) != 0) {
         xrom_arg = (cmd_array[cmd].code1 << 8) | cmd_array[cmd].code2;
         cmd = CMD_XROM;

@@ -142,11 +142,6 @@ int string2phloat(const char *buf, int buflen, phloat *d) {
 }
 
 /* public */
-Phloat::Phloat(const char *str) {
-    bid128_from_string(&val, (char *) str);
-}
-
-/* public */
 Phloat::Phloat(int numer, int denom) {
     BID_UINT128 n, d;
     bid128_from_int32(&n, &numer);
@@ -163,65 +158,6 @@ Phloat::Phloat(int8 numer, int8 denom) {
 }
 
 /* public */
-Phloat::Phloat(int i) {
-    bid128_from_int32(&val, &i);
-}
-
-/* public */
-Phloat::Phloat(int8 i) {
-    bid128_from_int64(&val, &i);
-}
-
-/* public */
-Phloat::Phloat(uint8 i) {
-    bid128_from_uint64(&val, &i);
-}
-
-/* public */
-Phloat::Phloat(double d) {
-    BID_UINT64 tmp;
-    binary64_to_bid64(&tmp, &d);
-    bid64_to_bid128(&val, &tmp);
-}
-
-/* public */
-Phloat::Phloat(const Phloat &p) {
-    val = p.val;
-}
-
-/* public */
-Phloat Phloat::operator=(int i) {
-    bid128_from_int32(&val, &i);
-    return *this;
-}
-
-/* public */
-Phloat Phloat::operator=(int8 i) {
-    bid128_from_int64(&val, &i);
-    return *this;
-}
-
-/* public */
-Phloat Phloat::operator=(uint8 i) {
-    bid128_from_uint64(&val, &i);
-    return *this;
-}
-
-/* public */
-Phloat Phloat::operator=(double d) {
-    BID_UINT64 tmp;
-    binary64_to_bid64(&tmp, &d);
-    bid64_to_bid128(&val, &tmp);
-    return *this;
-}
-
-/* public */
-Phloat Phloat::operator=(Phloat p) {
-    val = p.val;
-    return *this;
-}
-
-/* public */
 void Phloat::assign17digits(double d) {
     if (isinf(d) || isnan(d)) {
         binary64_to_bid128(&val, &d);
@@ -233,115 +169,6 @@ void Phloat::assign17digits(double d) {
             snprintf(buf, 25, "%.16e", d);
         bid128_from_string(&val, buf);
     }
-}
-
-/* public */
-bool Phloat::operator==(Phloat p) const {
-    int r;
-    bid128_quiet_equal(&r, (BID_UINT128 *) &val, &p.val);
-    return r != 0;
-}
-
-/* public */
-bool Phloat::operator!=(Phloat p) const {
-    int r;
-    bid128_quiet_not_equal(&r, (BID_UINT128 *) &val, &p.val);
-    return r != 0;
-}
-
-/* public */
-bool Phloat::operator<(Phloat p) const {
-    int r;
-    bid128_quiet_less(&r, (BID_UINT128 *) &val, &p.val);
-    return r != 0;
-}
-
-/* public */
-bool Phloat::operator<=(Phloat p) const {
-    int r;
-    bid128_quiet_less_equal(&r, (BID_UINT128 *) &val, &p.val);
-    return r != 0;
-}
-
-/* public */
-bool Phloat::operator>(Phloat p) const {
-    int r;
-    bid128_quiet_greater(&r, (BID_UINT128 *) &val, &p.val);
-    return r != 0;
-}
-
-/* public */
-bool Phloat::operator>=(Phloat p) const {
-    int r;
-    bid128_quiet_greater_equal(&r, (BID_UINT128 *) &val, &p.val);
-    return r != 0;
-}
-
-/* public */
-Phloat Phloat::operator-() const {
-    BID_UINT128 res;
-    bid128_negate(&res, (BID_UINT128 *) &val);
-    return Phloat(res);
-}
-
-/* public */
-Phloat Phloat::operator*(Phloat p) const {
-    BID_UINT128 res;
-    bid128_mul(&res, (BID_UINT128 *) &val, &p.val);
-    return Phloat(res);
-}
-
-/* public */
-Phloat Phloat::operator/(Phloat p) const {
-    BID_UINT128 res;
-    bid128_div(&res, (BID_UINT128 *) &val, &p.val);
-    return Phloat(res);
-}
-
-/* public */
-Phloat Phloat::operator+(Phloat p) const {
-    BID_UINT128 res;
-    bid128_add(&res, (BID_UINT128 *) &val, &p.val);
-    return Phloat(res);
-}
-
-/* public */
-Phloat Phloat::operator-(Phloat p) const {
-    BID_UINT128 res;
-    bid128_sub(&res, (BID_UINT128 *) &val, &p.val);
-    return Phloat(res);
-}
-
-/* public */
-Phloat Phloat::operator*=(Phloat p) {
-    BID_UINT128 res;
-    bid128_mul(&res, &val, &p.val);
-    val = res;
-    return *this;
-}
-
-/* public */
-Phloat Phloat::operator/=(Phloat p) {
-    BID_UINT128 res;
-    bid128_div(&res, &val, &p.val);
-    val = res;
-    return *this;
-}
-
-/* public */
-Phloat Phloat::operator+=(Phloat p) {
-    BID_UINT128 res;
-    bid128_add(&res, &val, &p.val);
-    val = res;
-    return *this;
-}
-
-/* public */
-Phloat Phloat::operator-=(Phloat p) {
-    BID_UINT128 res;
-    bid128_sub(&res, &val, &p.val);
-    val = res;
-    return *this;
 }
 
 /* public */
@@ -1239,7 +1066,25 @@ int phloat2string(phloat pd, char *buf, int buflen, int base_mode, int digits,
              * and we have to use SCI mode instead.
              */
             goto do_sci;
-            done_rounding:;
+            done_rounding:
+            /* WILD START: remove trailing zeros when in fix_float mode so that it behaves like
+             * ALL mode until we hit the configured number of digits.
+             * We can re-use max_frac_digits here, since it's never checked again for FIX mode */
+            if (dispmode == 0 && flags.f.fix_float) {
+                for (i = max_frac_digits-1; i >= 0; i--) {
+                    if (norm_fp[i] == 0) {
+                        max_frac_digits--;
+                    } else {
+                        break;
+                    }
+                }
+                if (max_frac_digits > digits) {
+                    /* I don't think this ever happens, but don't let us accidentally display
+                     * more digits than requested. */
+                    max_frac_digits = digits;
+                }
+            }
+            /* WILD END */
         } else if (max_int_digits < MAX_MANT_DIGITS) {
             /* ALL mode: for HP-42S compatibility, round to max_int_digits
              * digits before proceeding.
@@ -1329,9 +1174,10 @@ int phloat2string(phloat pd, char *buf, int buflen, int base_mode, int digits,
             char2buf(buf, buflen, &chars_so_far, (char)('0' + norm_ip[max_int_digits - 1 - i]));
         }
 
-        if (dispmode == 0)
-            frac_digits = digits;
-        else {
+        if (dispmode == 0) {
+            /* WILD: use updated digit count in fix_float mode */
+            frac_digits = flags.f.fix_float ? max_frac_digits : digits;
+        } else {
             frac_digits = 0;
             for (i = 0; i < max_frac_digits; i++)
                 if (norm_fp[i] != 0)
@@ -1340,7 +1186,7 @@ int phloat2string(phloat pd, char *buf, int buflen, int base_mode, int digits,
         if (frac_digits + int_digits > max_int_digits)
             frac_digits = max_int_digits - int_digits;
 
-        if (frac_digits > 0 || (dispmode == 0 && thousandssep)) {
+        if (frac_digits > 0 || (dispmode == 0 && thousandssep && !flags.f.fix_float)) {
             char2buf(buf, buflen, &chars_so_far, dec);
             for (i = 0; i < frac_digits; i++)
                 char2buf(buf, buflen, &chars_so_far, (char) ('0' + norm_fp[i]));

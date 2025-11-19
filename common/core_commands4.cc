@@ -34,10 +34,10 @@
 /********************************************************/
 
 int docmd_insr(arg_struct *arg) {
-    vartype *m, *newx;
-    vartype_realmatrix *rm;
-    vartype_complexmatrix *cm;
-    vartype_list *list;
+    vartype *m = NULL, *newx = NULL;
+    vartype_realmatrix *rm = NULL;
+    vartype_complexmatrix *cm = NULL;
+    vartype_list *list = NULL;
     int4 rows, columns, i;
     int err, refcount;
     int interactive;
@@ -133,6 +133,7 @@ int docmd_insr(arg_struct *arg) {
             case TYPE_REALMATRIX: esize = sizeof(phloat); break;
             case TYPE_COMPLEXMATRIX: esize = 2 * sizeof(phloat); break;
             case TYPE_LIST: esize = sizeof(vartype *); break;
+            default: return ERR_INTERNAL_ERROR;
         }
         double d_bytes = ((double) (rows + 1)) * ((double) columns) * esize;
         if (((double) (int4) d_bytes) != d_bytes)
@@ -533,7 +534,7 @@ int docmd_putm(arg_struct *arg) {
 }
 
 int docmd_rclel(arg_struct *arg) {
-    vartype *m, *v;
+    vartype *m = NULL, *v= NULL;
     int err = matedit_get(&m);
     if (err != ERR_NONE)
         return err;
@@ -1224,9 +1225,9 @@ static int matedit_move_list(vartype_list *list, int direction) {
 }
 
 static int matedit_move(int direction) {
-    vartype *m, *v;
-    vartype_realmatrix *rm;
-    vartype_complexmatrix *cm;
+    vartype *m = NULL, *v = NULL;
+    vartype_realmatrix *rm = NULL;
+    vartype_complexmatrix *cm = NULL;
     int4 rows, columns, new_i, new_j, old_n, new_n;
     int edge_flag = 0;
     int end_flag = 0;
